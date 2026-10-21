@@ -1,0 +1,16 @@
+# Binaries
+/agentty
+/bin/
+/dist/
+*.exe
+*.test
+
+# Coverage
+coverage.out
+coverage.html
+
+# Editor
+.idea/
+.vscode/
+*.swp
+.DS_Store

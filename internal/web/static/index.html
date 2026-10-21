@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>agentty</title>
+    <link rel="stylesheet" href="vendor/xterm.css" />
+    <style>
+      @font-face {
+        font-family: "JetBrainsMonoNL Nerd Font Mono";
+        src: url("fonts/JetBrainsMonoNLNerdFontMono-Regular.ttf") format("truetype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "JetBrainsMonoNL Nerd Font Mono";
+        src: url("fonts/JetBrainsMonoNLNerdFontMono-Bold.ttf") format("truetype");
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "JetBrainsMonoNL Nerd Font Mono";
+        src: url("fonts/JetBrainsMonoNLNerdFontMono-Italic.ttf") format("truetype");
+        font-weight: 400;
+        font-style: italic;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "JetBrainsMonoNL Nerd Font Mono";
+        src: url("fonts/JetBrainsMonoNLNerdFontMono-BoldItalic.ttf") format("truetype");
+        font-weight: 700;
+        font-style: italic;
+        font-display: swap;
+      }
+
+      :root {
+        color-scheme: dark;
+        --bar: #16181d;
+        --line: #2a2e37;
+        --text: #d7dae0;
+        --muted: #8b929e;
+        --accent: #7aa2f7;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: #0f1115;
+        color: var(--text);
+        font: 13px/1.4 ui-sans-serif, system-ui, -apple-system, sans-serif;
+        overflow: hidden;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      #bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        background: var(--bar);
+        border-bottom: 1px solid var(--line);
+        flex: 0 0 auto;
+      }
+
+      #shell {
+        display: flex;
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+      #sidebar {
+        width: 260px;
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        background: var(--bar);
+        border-right: 1px solid var(--line);
+      }
+      #sidebar[hidden] { display: none; }
+      .sidebar-head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--line);
+      }
+      .sidebar-head .title {
+        flex: 1 1 auto;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      #session-list {
+        list-style: none;
+        margin: 0;
+        padding: 6px;
+        overflow-y: auto;
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+      .session-item {
+        display: grid;
+        grid-template-columns: 8px minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .session-item:hover { background: #1f232b; }
+      .session-item.selected { background: #232936; }
+      .session-item .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #9ece6a;
+      }
+      .session-item .dot.exited { background: #8b929e; }
+      .session-item .name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 13px;
+      }
+      .session-item .meta {
+        font-size: 11px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .session-item .close {
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1;
+        padding: 2px 4px;
+        border-radius: 4px;
+        opacity: 0;
+        cursor: pointer;
+      }
+      .session-item:hover .close,
+      .session-item.selected .close { opacity: 1; }
+      .session-item .close:hover { background: #2b3140; color: #f7768e; }
+      @media (hover: none) {
+        .session-item .close { opacity: 1; }
+      }
+      .session-item.empty {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        cursor: default;
+      }
+      #main {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+      }
+      #status {
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 0 1 auto;
+        min-width: 0;
+      }
+      #status.ok { color: #9ece6a; }
+      #status.bad { color: #f7768e; }
+
+      #agent { margin-left: auto; }
+
+      #session {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        min-width: 0;
+      }
+      #session[hidden] { display: none; }
+      #session-name {
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 6px;
+        cursor: text;
+        user-select: none;
+      }
+      #session-name:hover { background: #1f232b; }
+      #session-input {
+        width: 160px;
+        background: #0f1115;
+        border: 1px solid #7aa2f7;
+        border-radius: 6px;
+        padding: 3px 6px;
+        color: var(--text);
+        font: inherit;
+        font-size: 12px;
+      }
+      #session-input[hidden],
+      #session-save[hidden],
+      #session-cancel[hidden] { display: none; }
+      #session-save,
+      #session-cancel {
+        min-width: 26px;
+        padding: 2px 6px;
+        font-size: 12px;
+        line-height: 1;
+      }
+      #session-save { color: #9ece6a; }
+      #session-cancel { color: #f7768e; }
+      select, button {
+        background: #1f232b;
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 4px 8px;
+        font: inherit;
+      }
+      button:active { background: #2b3140; }
+      #term {
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 6px 8px 0;
+      }
+      #keys {
+        display: flex;
+        gap: 6px;
+        padding: 6px 8px;
+        overflow-x: auto;
+        background: var(--bar);
+        border-top: 1px solid var(--line);
+        flex: 0 0 auto;
+      }
+      #keys button {
+        min-width: 44px;
+        min-height: 34px;
+        font-size: 12px;
+        flex: 0 0 auto;
+      }
+      .xterm .xterm-viewport { background: transparent !important; }
+
+      #login {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at 50% 30%, #1a1f2b 0%, #0f1115 60%);
+        padding: 24px;
+      }
+      #login[hidden] { display: none; }
+      #login form {
+        width: min(380px, 100%);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: #16181d;
+        border: 1px solid #2a2e37;
+        border-radius: 14px;
+        padding: 24px;
+      }
+      #login h1 { margin: 0; font-size: 18px; letter-spacing: 0.02em; }
+      #login p { margin: 0; color: #8b929e; font-size: 13px; line-height: 1.5; }
+      #login input {
+        background: #0f1115;
+        border: 1px solid #2a2e37;
+        border-radius: 8px;
+        padding: 10px 12px;
+        color: #d7dae0;
+        font: inherit;
+      }
+      #login input:focus { outline: 1px solid #7aa2f7; }
+      #login button {
+        background: #7aa2f7;
+        color: #0f1115;
+        border: 0;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      #login-error { color: #f7768e !important; min-height: 16px; }
+
+      #devices-panel {
+        position: fixed;
+        inset: 0;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.6);
+        padding: 24px;
+      }
+      #devices-panel[hidden] { display: none; }
+      #devices-panel .panel {
+        width: min(520px, 100%);
+        max-height: 80vh;
+        overflow: auto;
+        background: #16181d;
+        border: 1px solid #2a2e37;
+        border-radius: 14px;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      #devices-panel .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      #devices-panel h2 { margin: 0; font-size: 16px; }
+      #devices-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      #devices-list li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        border: 1px solid #2a2e37;
+        border-radius: 8px;
+        padding: 8px 10px;
+      }
+      #devices-list span {
+        font-size: 12px;
+        color: #8b929e;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      #devices-panel .hint { margin: 0; font-size: 12px; color: #8b929e; }
+      #devices-panel .hint code { color: #7aa2f7; }
+
+      @media (max-width: 720px) {
+        #sidebar {
+          position: fixed;
+          inset: 0 auto 0 0;
+          z-index: 15;
+          width: min(82vw, 300px);
+          box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+        }
+      }
+
+      @media (max-width: 480px) {
+        #bar { gap: 6px; padding: 6px 8px; }
+        #bar select, #bar button { padding: 4px 6px; font-size: 12px; }
+        #session-name { max-width: 110px; }
+        #session-input { width: 110px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="login">
+      <form id="login-form">
+        <h1>agentty</h1>
+        <p>Enter the pairing token from your daemon, or scan its QR code.</p>
+        <input
+          id="login-secret"
+          type="password"
+          placeholder="pairing token or password"
+          autocomplete="current-password"
+          spellcheck="false"
+        />
+        <button type="submit">Sign in</button>
+        <p id="login-error" role="alert"></p>
+      </form>
+    </div>
+    <div id="shell">
+      <aside id="sidebar">
+        <div class="sidebar-head">
+          <span class="title">Sessions</span>
+          <button id="new-session" title="New session">+</button>
+          <button id="sidebar-close" title="Hide sidebar">«</button>
+        </div>
+        <ul id="session-list"></ul>
+      </aside>
+      <main id="main">
+        <div id="bar">
+          <button id="sidebar-toggle" title="Toggle sidebar">☰</button>
+          <span id="session" hidden>
+            <span id="session-name" title="Double-click to rename"></span>
+            <input id="session-input" hidden maxlength="64" spellcheck="false" />
+            <button id="session-save" hidden title="Save">✓</button>
+            <button id="session-cancel" hidden title="Cancel">✗</button>
+          </span>
+          <span id="status">connecting…</span>
+          <select id="agent" title="Agent"></select>
+          <button id="reconnect" title="Reconnect">⟳</button>
+          <button id="devices" title="Devices">Devices</button>
+          <button id="logout" title="Sign out">Sign out</button>
+        </div>
+        <div id="term"></div>
+        <div id="keys">
+          <button data-seq="&#27;">Esc</button>
+          <button data-seq="&#9;">Tab</button>
+          <button data-seq="&#3;">Ctrl-C</button>
+          <button data-seq="&#4;">Ctrl-D</button>
+          <button data-seq="&#26;">Ctrl-Z</button>
+          <button data-seq="&#27;[A">↑</button>
+          <button data-seq="&#27;[B">↓</button>
+          <button data-seq="&#27;[C">→</button>
+          <button data-seq="&#27;[D">←</button>
+        </div>
+      </main>
+    </div>
+    <div id="devices-panel" hidden>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Devices</h2>
+          <button id="devices-close" title="close">×</button>
+        </div>
+        <ul id="devices-list"></ul>
+        <p class="hint">
+          To pair another device, run <code>agentty pair</code> on the daemon
+          host.
+        </p>
+      </div>
+    </div>
+    <script src="vendor/xterm.js"></script>
+    <script src="vendor/addon-fit.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
