@@ -288,6 +288,9 @@ front and set `AGENTTY_PUBLIC_URL` to the public https URL.
 
 ## Security
 
+See [SECURITY.md](SECURITY.md) for the reporting process, threat model, and
+hardening checklist.
+
 `agentty` exposes a PTY, which is shell-equivalent access. The pairing secret is
 the only boundary: treat the token or QR like a password, and rotate it by
 deleting `$AGENTTY_HOME/pairing-token` and restarting.
@@ -419,6 +422,10 @@ The workflow lives in `.github/workflows/release.yml`; the configuration lives
 in `.goreleaser.yaml`.
 
 ## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, coding standards, and the
+review bar. Security issues go through [SECURITY.md](SECURITY.md), not the issue
+tracker.
 
 1. Fork and create a topic branch.
 2. Keep the wire protocol backward-compatible; add optional fields, never
