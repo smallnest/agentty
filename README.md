@@ -31,8 +31,8 @@ downloads.
 
 - **Any terminal agent.** Claude Code, Codex, OpenCode, Pi, Gemini CLI, GitHub
   Copilot CLI, Cursor, Aider, Amp, Goose, Crush, Qwen Code, Droid, OpenHands,
-  Open Interpreter, Plandex, or a plain shell. Add your own with
-  `AGENTTY_AGENTS`.
+  Open Interpreter, Plandex, Kimi Code, MiMo Code, ZCode, or a plain shell. Add
+  your own with `AGENTTY_AGENTS`.
 - **Browser terminal.** xterm.js with a bundled JetBrainsMono NL Nerd Font, so
   Nerd Font icons render offline.
 - **Session sidebar.** Create, switch, rename, and close sessions. Each session
@@ -90,6 +90,9 @@ The UI lists every built-in agent and marks the ones whose binary is not on
 | `openhands` | `openhands` | OpenHands |
 | `interpreter` | `interpreter` | Open Interpreter |
 | `plandex` | `plandex` | Plandex |
+| `kimi` | `kimi` | Kimi Code CLI |
+| `mimo` | `mimo` | Xiaomi MiMo Code |
+| `zcode` | `zcode` | Z.ai ZCode |
 | `shell` | `$SHELL` | Any shell |
 
 ### Custom agents

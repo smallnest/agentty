@@ -34,6 +34,9 @@ func Builtins() []Spec {
 		{Name: "openhands", Command: "openhands"},
 		{Name: "interpreter", Command: "interpreter"},
 		{Name: "plandex", Command: "plandex"},
+		{Name: "kimi", Command: "kimi"},
+		{Name: "mimo", Command: "mimo"},
+		{Name: "zcode", Command: "zcode"},
 	}
 }
 
