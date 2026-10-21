@@ -297,60 +297,6 @@
       }
       #login-error { color: #f7768e !important; min-height: 16px; }
 
-      #devices-panel {
-        position: fixed;
-        inset: 0;
-        z-index: 30;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.6);
-        padding: 24px;
-      }
-      #devices-panel[hidden] { display: none; }
-      #devices-panel .panel {
-        width: min(520px, 100%);
-        max-height: 80vh;
-        overflow: auto;
-        background: #16181d;
-        border: 1px solid #2a2e37;
-        border-radius: 14px;
-        padding: 18px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-      #devices-panel .panel-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-      #devices-panel h2 { margin: 0; font-size: 16px; }
-      #devices-list {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-      #devices-list li {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        border: 1px solid #2a2e37;
-        border-radius: 8px;
-        padding: 8px 10px;
-      }
-      #devices-list span {
-        font-size: 12px;
-        color: #8b929e;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      #devices-panel .hint { margin: 0; font-size: 12px; color: #8b929e; }
-      #devices-panel .hint code { color: #7aa2f7; }
 
       @media (max-width: 720px) {
         #sidebar {
@@ -413,7 +359,6 @@
           <span id="status">connecting…</span>
           <select id="agent" title="Agent"></select>
           <button id="reconnect" title="Reconnect">⟳</button>
-          <button id="devices" title="Devices">Devices</button>
           <button id="logout" title="Sign out">Sign out</button>
         </div>
         <div id="term"></div>
@@ -429,19 +374,6 @@
           <button data-seq="&#27;[D">←</button>
         </div>
       </main>
-    </div>
-    <div id="devices-panel" hidden>
-      <div class="panel">
-        <div class="panel-head">
-          <h2>Devices</h2>
-          <button id="devices-close" title="close">×</button>
-        </div>
-        <ul id="devices-list"></ul>
-        <p class="hint">
-          To pair another device, run <code>agentty pair</code> on the daemon
-          host.
-        </p>
-      </div>
     </div>
     <script src="vendor/xterm.js"></script>
     <script src="vendor/addon-fit.js"></script>

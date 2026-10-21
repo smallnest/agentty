@@ -269,17 +269,23 @@ How it works:
   `$AGENTTY_HOME/devices.json` (mode `0600`). The browser keeps
   `agentty_device=<id>.<secret>` in an `HttpOnly`, `SameSite=Strict` cookie
   (`Secure` under TLS), with a sliding `AGENTTY_SESSION_TTL_SECONDS` lifetime.
-- **Revocation.** `GET /api/devices` lists devices;
-  `POST /api/devices/revoke` deletes one. Revocation is immediate because the
-  server checks the device store, not just the cookie. `POST /api/auth/logout`
-  revokes the calling device.
+- **Revocation.** Device management is a local admin operation:
+  `agentty devices` lists devices and `agentty devices revoke <id>` deletes
+  one. It uses the local admin credential, never a device cookie, so one
+  signed-in user cannot revoke another user's device. Revocation is immediate
+  because the server checks the device store, not just the cookie.
+  `POST /api/auth/logout` revokes only the calling device.
 - **Rate limiting.** Ten failed logins per IP per minute, plus a global cap of
   four concurrent Argon2 verifications.
 - **Protected routes.** `/ws` and `/api/agents` require a device.
-  `/api/devices`, `/api/devices/revoke`, `/api/sessions`,
-  `/api/sessions/rename`, `/api/sessions/close`, and `/api/pairing/code` also
-  accept the local admin credential. Static assets and `/health` stay public so
-  the sign-in page can load.
+  `/api/devices`, `/api/devices/revoke`, and `/api/pairing/code` require the
+  local admin credential. `/api/sessions`, `/api/sessions/rename`, and
+  `/api/sessions/close` accept a device or the admin credential. Static assets
+  and `/health` stay public so the sign-in page can load.
+
+Pairing codes and device management are CLI-only (`agentty pair`,
+`agentty devices`); the web UI intentionally does not expose them, so a shared
+daemon cannot be used to revoke another user's device.
 
 Use TLS if the daemon is reachable from another machine. Without it, pairing
 material and device cookies cross the network in plaintext. Set

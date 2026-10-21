@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -59,6 +60,29 @@ func newJarClient(t *testing.T) *http.Client {
 		t.Fatalf("cookiejar: %v", err)
 	}
 	return &http.Client{Jar: jar}
+}
+
+func adminRequest(t *testing.T, method, endpoint string, payload any) *http.Response {
+	t.Helper()
+	var reader io.Reader
+	if payload != nil {
+		data, err := json.Marshal(payload)
+		if err != nil {
+			t.Fatalf("marshal: %v", err)
+		}
+		reader = bytes.NewReader(data)
+	}
+	request, err := http.NewRequest(method, endpoint, reader)
+	if err != nil {
+		t.Fatalf("request: %v", err)
+	}
+	request.Header.Set("Authorization", "Bearer admin-token")
+	request.Header.Set("Content-Type", "application/json")
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatalf("admin request: %v", err)
+	}
+	return response
 }
 
 func TestAuthStatusUnauthenticated(t *testing.T) {
@@ -195,15 +219,8 @@ func TestWSAcceptsDeviceCookie(t *testing.T) {
 
 func TestPairingCodeFlow(t *testing.T) {
 	ts := newAuthServer(t, "tok")
-	admin := newJarClient(t)
 
-	login := postLogin(t, admin, ts.URL+"/api/auth/login", "tok")
-	login.Body.Close()
-
-	response, err := admin.Post(ts.URL+"/api/pairing/code", "application/json", nil)
-	if err != nil {
-		t.Fatalf("pairing code: %v", err)
-	}
+	response := adminRequest(t, http.MethodPost, ts.URL+"/api/pairing/code", nil)
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		t.Fatalf("pairing code status = %d", response.StatusCode)
@@ -237,17 +254,14 @@ func TestPairingCodeFlow(t *testing.T) {
 	}
 }
 
-func TestDevicesListAndRevoke(t *testing.T) {
+func TestAdminDevicesListAndRevoke(t *testing.T) {
 	ts := newAuthServer(t, "tok")
-	client := newJarClient(t)
+	deviceClient := newJarClient(t)
 
-	login := postLogin(t, client, ts.URL+"/api/auth/login", "tok")
+	login := postLogin(t, deviceClient, ts.URL+"/api/auth/login", "tok")
 	login.Body.Close()
 
-	response, err := client.Get(ts.URL + "/api/devices")
-	if err != nil {
-		t.Fatalf("devices: %v", err)
-	}
+	response := adminRequest(t, http.MethodGet, ts.URL+"/api/devices", nil)
 	var devices []auth.DeviceView
 	if err := json.NewDecoder(response.Body).Decode(&devices); err != nil {
 		t.Fatalf("decode: %v", err)
@@ -257,17 +271,13 @@ func TestDevicesListAndRevoke(t *testing.T) {
 		t.Fatalf("devices = %d, want 1", len(devices))
 	}
 
-	revokeBody, _ := json.Marshal(map[string]string{"id": devices[0].ID})
-	revoke, err := client.Post(ts.URL+"/api/devices/revoke", "application/json", bytes.NewReader(revokeBody))
-	if err != nil {
-		t.Fatalf("revoke: %v", err)
-	}
+	revoke := adminRequest(t, http.MethodPost, ts.URL+"/api/devices/revoke", map[string]string{"id": devices[0].ID})
 	revoke.Body.Close()
 	if revoke.StatusCode != http.StatusOK {
 		t.Fatalf("revoke status = %d", revoke.StatusCode)
 	}
 
-	status, err := client.Get(ts.URL + "/api/auth/status")
+	status, err := deviceClient.Get(ts.URL + "/api/auth/status")
 	if err != nil {
 		t.Fatalf("status: %v", err)
 	}
@@ -276,6 +286,32 @@ func TestDevicesListAndRevoke(t *testing.T) {
 	_ = json.NewDecoder(status.Body).Decode(&body)
 	if body["authenticated"] == true {
 		t.Fatal("expected the revoked device to be logged out")
+	}
+}
+
+func TestDeviceCannotManageDevices(t *testing.T) {
+	ts := newAuthServer(t, "tok")
+	client := newJarClient(t)
+
+	login := postLogin(t, client, ts.URL+"/api/auth/login", "tok")
+	login.Body.Close()
+
+	devices, err := client.Get(ts.URL + "/api/devices")
+	if err != nil {
+		t.Fatalf("devices: %v", err)
+	}
+	devices.Body.Close()
+	if devices.StatusCode != http.StatusForbidden {
+		t.Fatalf("devices status = %d, want 403", devices.StatusCode)
+	}
+
+	pairing, err := client.Post(ts.URL+"/api/pairing/code", "application/json", nil)
+	if err != nil {
+		t.Fatalf("pairing code: %v", err)
+	}
+	pairing.Body.Close()
+	if pairing.StatusCode != http.StatusForbidden {
+		t.Fatalf("pairing status = %d, want 403", pairing.StatusCode)
 	}
 }
 

@@ -617,47 +617,5 @@
     location.reload();
   });
 
-  // --- devices ------------------------------------------------------------
-
-  const devicesPanel = document.getElementById("devices-panel");
-  const devicesList = document.getElementById("devices-list");
-
-  async function refreshDevices() {
-    devicesList.textContent = "";
-    const response = await fetch("/api/devices");
-    if (!response.ok) {
-      devicesList.textContent = "unauthorized";
-      return;
-    }
-    const devices = await response.json();
-    devicesList.innerHTML = "";
-    for (const device of devices) {
-      const row = document.createElement("li");
-      const label = document.createElement("span");
-      label.textContent = `${device.name} · ${device.id}`;
-      const revoke = document.createElement("button");
-      revoke.textContent = "revoke";
-      revoke.addEventListener("click", async () => {
-        await fetch("/api/devices/revoke", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: device.id }),
-        });
-        await refreshDevices();
-      });
-      row.append(label, revoke);
-      devicesList.appendChild(row);
-    }
-  }
-
-  document.getElementById("devices").addEventListener("click", async () => {
-    devicesPanel.hidden = false;
-    await refreshDevices();
-  });
-
-  document.getElementById("devices-close").addEventListener("click", () => {
-    devicesPanel.hidden = true;
-  });
-
   boot();
 })();

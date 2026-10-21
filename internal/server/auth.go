@@ -76,14 +76,14 @@ func (s *Server) handleAuthLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDevices(w http.ResponseWriter, r *http.Request) {
-	if !s.requireAdminOrDevice(w, r) {
+	if !s.requireAdmin(w, r) {
 		return
 	}
 	writeJSON(w, http.StatusOK, s.auth.ListDevices())
 }
 
 func (s *Server) handleDeviceRevoke(w http.ResponseWriter, r *http.Request) {
-	if !s.requireAdminOrDevice(w, r) {
+	if !s.requireAdmin(w, r) {
 		return
 	}
 	var request struct {
@@ -106,9 +106,10 @@ func (s *Server) handleDeviceRevoke(w http.ResponseWriter, r *http.Request) {
 }
 
 // handlePairingCode mints a one-time code and returns its URL and terminal QR.
-// Browser sessions and the local admin credential can both mint codes.
+// Only the local admin credential can mint codes; a device cannot enrol more
+// devices or manage other users' credentials.
 func (s *Server) handlePairingCode(w http.ResponseWriter, r *http.Request) {
-	if !s.requireAdminOrDevice(w, r) {
+	if !s.requireAdmin(w, r) {
 		return
 	}
 	code, expiry := s.auth.NewPairingCode()
@@ -206,6 +207,21 @@ func (s *Server) requireAdminOrDevice(w http.ResponseWriter, r *http.Request) bo
 		return true
 	}
 	writeJSON(w, http.StatusUnauthorized, map[string]any{"error": "unauthorized"})
+	return false
+}
+
+// requireAdmin accepts only the local admin credential, not a device cookie.
+// Device management and pairing are intentionally local-admin operations so one
+// signed-in user cannot revoke another user's device.
+func (s *Server) requireAdmin(w http.ResponseWriter, r *http.Request) bool {
+	if s.isAdmin(r) {
+		return true
+	}
+	status := http.StatusUnauthorized
+	if s.authenticated(r) {
+		status = http.StatusForbidden
+	}
+	writeJSON(w, status, map[string]any{"error": "admin credential required"})
 	return false
 }
 
