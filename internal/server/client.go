@@ -5,11 +5,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sync"
 	"time"
 
+	"github.com/smallnest/agentty/internal/agent"
 	"github.com/smallnest/agentty/internal/config"
 	"github.com/smallnest/agentty/internal/terminal"
 )
@@ -227,27 +227,23 @@ func (c *Client) fail(slot uint16, message string) {
 	c.Enqueue(terminal.Frame{Op: terminal.OpError, Slot: slot, Data: []byte(message)})
 }
 
-func resolveCommand(cfg config.Config, agent, cmd string) terminal.Command {
+func resolveCommand(cfg config.Config, requested, cmd string) terminal.Command {
 	if cmd != "" && cfg.AllowCmd {
 		return terminal.Command{Command: "sh", Args: []string{"-c", cmd}}
 	}
 
-	name := agent
+	name := requested
 	if name == "" {
 		name = cfg.DefaultAgent
 	}
-	switch name {
-	case "claude":
-		return terminal.Command{Command: "claude"}
-	case "codex":
-		return terminal.Command{Command: "codex"}
-	case "opencode":
-		return terminal.Command{Command: "opencode"}
-	case "pi":
-		return terminal.Command{Command: "pi"}
-	default:
-		return terminal.Command{Command: shellPath()}
+	specs := cfg.Agents
+	if len(specs) == 0 {
+		specs = agent.Builtins()
 	}
+	if spec, ok := agent.Find(specs, name); ok {
+		return terminal.Command{Command: spec.Command, Args: spec.Args}
+	}
+	return terminal.Command{Command: shellPath()}
 }
 
 func resolveCwd(cfg config.Config, cwd string) string {
@@ -277,13 +273,4 @@ func generateSessionID() string {
 		return "sess_fallback"
 	}
 	return "sess_" + hex.EncodeToString(b[:])
-}
-
-// LookupAgent reports whether an agent binary is available, for /api/agents.
-func LookupAgent(name string) bool {
-	if name == "shell" {
-		return true
-	}
-	_, err := exec.LookPath(name)
-	return err == nil
 }

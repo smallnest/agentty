@@ -179,6 +179,28 @@ func TestInvalidCreateReportsError(t *testing.T) {
 	}
 }
 
+func TestAgentsEndpointIncludesBuiltins(t *testing.T) {
+	ts := newTestServer(t)
+	response, err := http.Get(ts.URL + "/api/agents")
+	if err != nil {
+		t.Fatalf("agents: %v", err)
+	}
+	defer response.Body.Close()
+	var agents []agentInfo
+	if err := json.NewDecoder(response.Body).Decode(&agents); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	names := make(map[string]bool, len(agents))
+	for _, item := range agents {
+		names[item.Name] = true
+	}
+	for _, want := range []string{"shell", "claude", "codex", "opencode", "pi", "gemini", "aider", "goose"} {
+		if !names[want] {
+			t.Fatalf("missing agent %q in %v", want, names)
+		}
+	}
+}
+
 func TestExitedSessionIsHiddenFromList(t *testing.T) {
 	ts := newTestServer(t)
 	ws := dial(t, ts)

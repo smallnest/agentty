@@ -2,11 +2,14 @@
 package config
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/smallnest/agentty/internal/agent"
 )
 
 // Config holds runtime settings for the agent daemon.
@@ -59,6 +62,11 @@ type Config struct {
 	Persist bool
 	Backend string
 
+	// Agents is the built-in catalog merged with AGENTTY_AGENTS overrides.
+	Agents []agent.Spec
+	// AgentConfigError reports an invalid AGENTTY_AGENTS value.
+	AgentConfigError string
+
 	// AgenttyHome holds the persisted server id.
 	AgenttyHome string
 
@@ -81,32 +89,35 @@ func FromEnv() Config {
 	endpoint := envString("AGENTTY_RELAY_ENDPOINT", "")
 	certFile := os.Getenv("AGENTTY_TLS_CERT_FILE")
 	keyFile := os.Getenv("AGENTTY_TLS_KEY_FILE")
+	customAgents, agentErr := parseAgents(os.Getenv("AGENTTY_AGENTS"))
 	return Config{
 		// Bind all interfaces by default so a phone on the same network can
 		// reach the pairing QR. Set AGENTTY_LISTEN=127.0.0.1:7070 for local-only.
-		Listen:        envString("AGENTTY_LISTEN", "0.0.0.0:7070"),
-		DefaultAgent:  envString("AGENTTY_DEFAULT_AGENT", "shell"),
-		AllowCmd:      envBool("AGENTTY_ALLOW_CMD", true),
-		WorkingDir:    envString("AGENTTY_WORKING_DIR", defaultHome()),
-		ReplayBytes:   envInt("AGENTTY_REPLAY_BYTES", 256*1024),
-		SendQueue:     envInt("AGENTTY_SEND_QUEUE", 64),
-		IdleTimeout:   time.Duration(envInt("AGENTTY_IDLE_TIMEOUT_SECONDS", 1800)) * time.Second,
-		TLSCertFile:   certFile,
-		TLSKeyFile:    keyFile,
-		AgenttyHome:   envString("AGENTTY_HOME", defaultAgenttyHome()),
-		Interface:     envString("AGENTTY_INTERFACE", ""),
-		ServerID:      envString("AGENTTY_SERVER_ID", ""),
-		RelayEnabled:  envBool("AGENTTY_RELAY_ENABLED", endpoint != ""),
-		RelayEndpoint: endpoint,
-		RelayUseTLS:   envBool("AGENTTY_RELAY_USE_TLS", strings.HasSuffix(endpoint, ":443")),
-		AuthEnabled:   envBool("AGENTTY_AUTH_ENABLED", true),
-		Password:      os.Getenv("AGENTTY_PASSWORD"),
-		SessionTTL:    time.Duration(envInt("AGENTTY_SESSION_TTL_SECONDS", 30*24*3600)) * time.Second,
-		PublicURL:     os.Getenv("AGENTTY_PUBLIC_URL"),
-		CookieSecure:  envBool("AGENTTY_COOKIE_SECURE", certFile != "" && keyFile != ""),
-		PairingToken:  os.Getenv("AGENTTY_PAIRING_TOKEN"),
-		Persist:       envBool("AGENTTY_PERSIST", true),
-		Backend:       envString("AGENTTY_BACKEND", "auto"),
+		Listen:           envString("AGENTTY_LISTEN", "0.0.0.0:7070"),
+		DefaultAgent:     envString("AGENTTY_DEFAULT_AGENT", "shell"),
+		AllowCmd:         envBool("AGENTTY_ALLOW_CMD", true),
+		WorkingDir:       envString("AGENTTY_WORKING_DIR", defaultHome()),
+		ReplayBytes:      envInt("AGENTTY_REPLAY_BYTES", 256*1024),
+		SendQueue:        envInt("AGENTTY_SEND_QUEUE", 64),
+		IdleTimeout:      time.Duration(envInt("AGENTTY_IDLE_TIMEOUT_SECONDS", 1800)) * time.Second,
+		TLSCertFile:      certFile,
+		TLSKeyFile:       keyFile,
+		AgenttyHome:      envString("AGENTTY_HOME", defaultAgenttyHome()),
+		Interface:        envString("AGENTTY_INTERFACE", ""),
+		ServerID:         envString("AGENTTY_SERVER_ID", ""),
+		RelayEnabled:     envBool("AGENTTY_RELAY_ENABLED", endpoint != ""),
+		RelayEndpoint:    endpoint,
+		RelayUseTLS:      envBool("AGENTTY_RELAY_USE_TLS", strings.HasSuffix(endpoint, ":443")),
+		AuthEnabled:      envBool("AGENTTY_AUTH_ENABLED", true),
+		Password:         os.Getenv("AGENTTY_PASSWORD"),
+		SessionTTL:       time.Duration(envInt("AGENTTY_SESSION_TTL_SECONDS", 30*24*3600)) * time.Second,
+		PublicURL:        os.Getenv("AGENTTY_PUBLIC_URL"),
+		CookieSecure:     envBool("AGENTTY_COOKIE_SECURE", certFile != "" && keyFile != ""),
+		PairingToken:     os.Getenv("AGENTTY_PAIRING_TOKEN"),
+		Persist:          envBool("AGENTTY_PERSIST", true),
+		Backend:          envString("AGENTTY_BACKEND", "auto"),
+		Agents:           agent.Merge(agent.Builtins(), customAgents),
+		AgentConfigError: agentErr,
 	}
 }
 
@@ -123,6 +134,27 @@ func defaultAgenttyHome() string {
 		return ".agentty"
 	}
 	return filepath.Join(home, ".agentty")
+}
+
+func parseAgents(raw string) ([]agent.Spec, string) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, ""
+	}
+	var specs []agent.Spec
+	if err := json.Unmarshal([]byte(raw), &specs); err != nil {
+		return nil, "AGENTTY_AGENTS is not valid JSON: " + err.Error()
+	}
+	out := make([]agent.Spec, 0, len(specs))
+	for _, spec := range specs {
+		spec.Name = strings.TrimSpace(spec.Name)
+		spec.Command = strings.TrimSpace(spec.Command)
+		if spec.Name == "" || spec.Command == "" {
+			continue
+		}
+		out = append(out, spec)
+	}
+	return out, ""
 }
 
 func envString(key, fallback string) string {

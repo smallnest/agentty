@@ -29,6 +29,9 @@ func runDaemon() {
 	cfg := config.FromEnv()
 	cfg.ServerID = serverid.LoadOrCreate(cfg.AgenttyHome, cfg.ServerID)
 
+	if cfg.AgentConfigError != "" {
+		log.Printf("agentty: %s", cfg.AgentConfigError)
+	}
 	log.Printf("agentty %s (commit %s, built %s)", version, commit, date)
 
 	adminToken, err := loadOrCreateAdminToken(cfg.AgenttyHome)

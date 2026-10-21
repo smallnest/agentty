@@ -29,8 +29,10 @@ downloads.
 
 ## Features
 
-- **Any terminal agent.** Claude Code, Codex, OpenCode, Pi, or a plain shell.
-  The agent list comes from what is installed on `PATH`.
+- **Any terminal agent.** Claude Code, Codex, OpenCode, Pi, Gemini CLI, GitHub
+  Copilot CLI, Cursor, Aider, Amp, Goose, Crush, Qwen Code, Droid, OpenHands,
+  Open Interpreter, Plandex, or a plain shell. Add your own with
+  `AGENTTY_AGENTS`.
 - **Browser terminal.** xterm.js with a bundled JetBrainsMono NL Nerd Font, so
   Nerd Font icons render offline.
 - **Session sidebar.** Create, switch, rename, and close sessions. Each session
@@ -64,6 +66,45 @@ The daemon owns the HTTP/WebSocket server, the session registry, pairing, and
 the optional relay connection. A session is a detached host process that owns
 the PTY; the daemon is a client of that host. The browser speaks a small binary
 frame protocol (input, output, resize, snapshot, rename) over the WebSocket.
+
+## Supported agents
+
+The UI lists every built-in agent and marks the ones whose binary is not on
+`PATH`. Select one to start a session.
+
+| Name | Binary | Notes |
+| --- | --- | --- |
+| `claude` | `claude` | Claude Code |
+| `codex` | `codex` | OpenAI Codex CLI |
+| `opencode` | `opencode` | OpenCode |
+| `pi` | `pi` | Pi |
+| `gemini` | `gemini` | Gemini CLI |
+| `copilot` | `copilot` | GitHub Copilot CLI |
+| `cursor` | `cursor-agent` | Cursor CLI |
+| `aider` | `aider` | Aider |
+| `amp` | `amp` | Sourcegraph Amp |
+| `goose` | `goose session` | Block Goose |
+| `crush` | `crush` | Charm Crush |
+| `qwen` | `qwen` | Qwen Code |
+| `droid` | `droid` | Factory Droid |
+| `openhands` | `openhands` | OpenHands |
+| `interpreter` | `interpreter` | Open Interpreter |
+| `plandex` | `plandex` | Plandex |
+| `shell` | `$SHELL` | Any shell |
+
+### Custom agents
+
+`AGENTTY_AGENTS` is a JSON array appended to the catalog. An entry with the same
+name overrides the built-in:
+
+```sh
+AGENTTY_AGENTS='[
+  {"name":"my-agent","command":"my-agent","args":["--yolo"]}
+]' agentty
+```
+
+Any agent can also be launched ad hoc with the raw `cmd` field when
+`AGENTTY_ALLOW_CMD` is true.
 
 ## Install
 
@@ -190,6 +231,7 @@ All settings are environment variables.
 | --- | --- | --- |
 | `AGENTTY_LISTEN` | `0.0.0.0:7070` | HTTP/WebSocket listen address. Use `127.0.0.1:7070` for local-only. |
 | `AGENTTY_DEFAULT_AGENT` | `shell` | Agent used when a session does not name one. |
+| `AGENTTY_AGENTS` | built-ins | JSON array of `{name, command, args}` custom agents; overrides by name. |
 | `AGENTTY_ALLOW_CMD` | `true` | Allow the raw `cmd` create field (`sh -c`). |
 | `AGENTTY_WORKING_DIR` | `$HOME` | Default working directory for spawned agents. |
 | `AGENTTY_REPLAY_BYTES` | `262144` | Per-session output buffer used to rebuild a screen. |

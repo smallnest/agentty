@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
+	"github.com/smallnest/agentty/internal/agent"
 	"github.com/smallnest/agentty/internal/auth"
 	"github.com/smallnest/agentty/internal/config"
 	"github.com/smallnest/agentty/internal/terminal"
@@ -76,11 +77,19 @@ func (s *Server) handleAgents(w http.ResponseWriter, r *http.Request) {
 	if !s.requireAuth(w, r) {
 		return
 	}
+	specs := s.config.Agents
+	if len(specs) == 0 {
+		specs = agent.Builtins()
+	}
 	agents := []agentInfo{
 		{Name: "shell", Command: shellPath(), Available: true},
 	}
-	for _, name := range []string{"claude", "codex", "opencode", "pi"} {
-		agents = append(agents, agentInfo{Name: name, Command: name, Available: LookupAgent(name)})
+	for _, spec := range specs {
+		agents = append(agents, agentInfo{
+			Name:      spec.Name,
+			Command:   spec.Command,
+			Available: agent.Available(spec),
+		})
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(agents)
