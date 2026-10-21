@@ -16,6 +16,17 @@ exposing a shell to the open internet.
 
 > agentty is early. The wire protocol and CLI may change between minor releases.
 
+## Quick install
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/smallnest/agentty/master/scripts/install.sh | sh
+```
+
+The script detects Linux/macOS and amd64/arm64, downloads the latest release,
+verifies it against `checksums.txt`, and installs `agentty`. See
+[Install](#install) for pinned versions, custom directories, mirrors, and manual
+downloads.
+
 ## Features
 
 - **Any terminal agent.** Claude Code, Codex, OpenCode, Pi, or a plain shell.
@@ -62,6 +73,12 @@ frame protocol (input, output, resize, snapshot, rename) over the WebSocket.
 curl -fsSL https://raw.githubusercontent.com/smallnest/agentty/master/scripts/install.sh | sh
 ```
 
+From a checkout you can run the same script directly:
+
+```sh
+sh scripts/install.sh
+```
+
 The script detects Linux/macOS and amd64/arm64, downloads the latest release,
 verifies it against `checksums.txt`, and installs to `/usr/local/bin` (as root)
 or `~/.local/bin`. Pin a version or choose a directory:
@@ -100,6 +117,9 @@ git clone https://github.com/smallnest/agentty.git
 cd agentty
 make build
 ./bin/agentty
+
+# or install into GOBIN
+make install
 ```
 
 ## Quick start
@@ -369,6 +389,7 @@ Requires Go 1.26+ and `make`.
 ```sh
 make help        # list targets
 make build       # build ./bin/agentty
+make install     # install the binary into GOBIN
 make run         # run from source
 make test        # go test ./...
 make test-race   # go test -race -count=1 ./...
