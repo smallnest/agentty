@@ -45,6 +45,7 @@ func Builtins() []Spec {
 		{Name: "codebuddy", Command: "codebuddy"},
 		{Name: "atomcode", Command: "atomcode"},
 		{Name: "snow", Command: "snow"},
+		{Name: "antigravity", Command: "agy"},
 	}
 }
 

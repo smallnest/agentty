@@ -32,8 +32,8 @@ downloads.
 - **Any terminal agent.** Claude Code, Codex, OpenCode, Pi, Gemini CLI, GitHub
   Copilot CLI, Cursor, Aider, Amp, Goose, Crush, Qwen Code, Droid, OpenHands,
   Open Interpreter, Plandex, Kimi Code, MiMo Code, ZCode, DevEco Code, MothX,
-  OmO, omp, Cline, CodeBuddy, AtomCode, Snow CLI, or a plain shell. Add your own
-  with `AGENTTY_AGENTS`.
+  OmO, omp, Cline, CodeBuddy, AtomCode, Snow CLI, Antigravity, or a plain shell.
+  Add your own with `AGENTTY_AGENTS`.
 - **Browser terminal.** xterm.js with a bundled JetBrainsMono NL Nerd Font, so
   Nerd Font icons render offline.
 - **Session sidebar.** Create, switch, rename, and close sessions. Each session
@@ -102,6 +102,7 @@ The UI lists every built-in agent and marks the ones whose binary is not on
 | `codebuddy` | `codebuddy` | Tencent CodeBuddy Code |
 | `atomcode` | `atomcode` | AtomCode |
 | `snow` | `snow` | Snow CLI |
+| `antigravity` | `agy` | Google Antigravity CLI |
 | `shell` | `$SHELL` | Any shell |
 
 ### Custom agents
