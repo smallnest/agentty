@@ -194,7 +194,7 @@ func TestAgentsEndpointIncludesBuiltins(t *testing.T) {
 	for _, item := range agents {
 		names[item.Name] = true
 	}
-	for _, want := range []string{"shell", "claude", "codex", "opencode", "pi", "gemini", "aider", "goose", "kimi", "mimo", "zcode"} {
+	for _, want := range []string{"shell", "claude", "codex", "opencode", "pi", "gemini", "aider", "goose", "kimi", "mimo", "zcode", "cline", "codebuddy", "snow"} {
 		if !names[want] {
 			t.Fatalf("missing agent %q in %v", want, names)
 		}

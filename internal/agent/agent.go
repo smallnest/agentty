@@ -37,6 +37,14 @@ func Builtins() []Spec {
 		{Name: "kimi", Command: "kimi"},
 		{Name: "mimo", Command: "mimo"},
 		{Name: "zcode", Command: "zcode"},
+		{Name: "deveco", Command: "deveco"},
+		{Name: "mothx", Command: "mothx"},
+		{Name: "omo", Command: "omo"},
+		{Name: "omp", Command: "omp"},
+		{Name: "cline", Command: "cline"},
+		{Name: "codebuddy", Command: "codebuddy"},
+		{Name: "atomcode", Command: "atomcode"},
+		{Name: "snow", Command: "snow"},
 	}
 }
 
