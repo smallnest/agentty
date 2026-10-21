@@ -266,6 +266,15 @@
     } catch (_) {}
   }
 
+  if (window.ResizeObserver) {
+    let refitFrame = 0;
+    const resizeObserver = new ResizeObserver(() => {
+      cancelAnimationFrame(refitFrame);
+      refitFrame = requestAnimationFrame(refit);
+    });
+    resizeObserver.observe(termEl);
+  }
+
   window.addEventListener("resize", refit);
   window.addEventListener("orientationchange", () => setTimeout(refit, 150));
   if (window.visualViewport) {

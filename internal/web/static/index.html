@@ -50,6 +50,7 @@
       html, body {
         margin: 0;
         height: 100%;
+        height: 100dvh;
         background: #0f1115;
         color: var(--text);
         font: 13px/1.4 ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -234,12 +235,13 @@
         flex: 1 1 auto;
         min-height: 0;
         padding: 6px 8px 0;
+        overflow: hidden;
       }
       #keys {
         display: flex;
+        flex-wrap: wrap;
         gap: 6px;
         padding: 6px 8px;
-        overflow-x: auto;
         background: var(--bar);
         border-top: 1px solid var(--line);
         flex: 0 0 auto;
@@ -360,11 +362,17 @@
         }
       }
 
-      @media (max-width: 480px) {
-        #bar { gap: 6px; padding: 6px 8px; }
-        #bar select, #bar button { padding: 4px 6px; font-size: 12px; }
-        #session-name { max-width: 110px; }
-        #session-input { width: 110px; }
+      @media (max-width: 600px) {
+        #status { display: none; }
+        #bar { gap: 4px; padding: 6px 8px; }
+        #bar select, #bar button {
+          padding: 4px 6px;
+          font-size: 12px;
+          white-space: nowrap;
+        }
+        #session-name { max-width: 70px; }
+        #session-input { width: 90px; }
+        #agent { max-width: 100px; }
       }
     </style>
   </head>
